@@ -228,6 +228,11 @@ step-library:
         path: mapbox-gl-js/test/integration/render-tests/index-recycle-map.html
         destination: render-tests
 
+  - &upload-macos-build-logs
+      store_artifacts:
+        path: build/xcodebuild.log
+        destination: build
+
 jobs:
   nitpick:
     docker:
@@ -733,6 +738,7 @@ jobs:
           command: scripts/nitpick/generated-code.js darwin
       - *show-ccache-stats
       - *save-cache
+      - *upload-macos-build-logs
 
 # ------------------------------------------------------------------------------
   ios-sanitize:
@@ -752,6 +758,7 @@ jobs:
           command: make ios-sanitize
       - *show-ccache-stats
       - *save-cache
+      - *upload-macos-build-logs
 
 # ------------------------------------------------------------------------------
   ios-sanitize-address:
@@ -772,6 +779,7 @@ jobs:
           command: make ios-sanitize-address
       - *show-ccache-stats
       - *save-cache
+      - *upload-macos-build-logs
 
 # ------------------------------------------------------------------------------
   ios-static-analyzer:
@@ -792,6 +800,7 @@ jobs:
           command: make ios-static-analyzer
       - *show-ccache-stats
       - *save-cache
+      - *upload-macos-build-logs
 
 # ------------------------------------------------------------------------------
   macos-debug:
@@ -820,6 +829,7 @@ jobs:
       - store_artifacts:
           path: test/fixtures
           destination: test/fixtures
+      - *upload-macos-build-logs
 
 # ------------------------------------------------------------------------------
   macos-debug-qt5:
@@ -845,6 +855,7 @@ jobs:
       - store_artifacts:
           path: test/fixtures
           destination: test/fixtures
+      - *upload-macos-build-logs
 
 # ------------------------------------------------------------------------------
   macos-release-node4:
@@ -866,6 +877,7 @@ jobs:
       - *run-node-macos-tests
       - *publish-node-package
       - *upload-render-tests
+      - *upload-macos-build-logs
 
 # ------------------------------------------------------------------------------
   macos-release-node6:
@@ -887,3 +899,4 @@ jobs:
       - *run-node-macos-tests
       - *publish-node-package
       - *upload-render-tests
+      - *upload-macos-build-logs
