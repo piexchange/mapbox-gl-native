@@ -124,6 +124,159 @@ std::vector<UnwrappedTileID> tileCover(const Point<double>& tl,
     return result;
 }
 
+//Ported from tile-cover js lib. Uses Fast Voxel Traversal
+std::vector<Point<int32_t>> lineCover(const std::vector<Point<double>>& coords,
+                                      int32_t zoom,
+                                      std::vector<Point<int32_t>>* ring = nullptr) {
+    std::vector<Point<int32_t>> tiles;
+    auto numPoints = coords.size();
+    
+    auto prevPoint = TileCoordinate::fromLatLng(zoom,{ coords[0].y, coords[0].x }).p;
+    int32_t prevX = INT_MAX, prevY = INT_MAX;
+    int32_t x,y;
+    for (uint32_t i=1; i < numPoints; i++) {
+        Point<double> p0 = prevPoint;
+        Point<double> p1 = TileCoordinate::fromLatLng(zoom, { coords[i].y, coords[i].x}).p;
+        prevPoint = p1;
+
+        double dx = p1.x - p0.x;
+        double dy = p1.y - p0.y;
+        if (dx == 0 && dy == 0) continue;
+
+        const auto xi = dx > 0 ? 1 : -1;
+        const auto yi = dy > 0 ? 1 : -1;
+
+        x = static_cast<int32_t>(floor(p0.x));
+        y = static_cast<int32_t>(floor(p0.y));
+
+        auto tMaxX = dx == 0 ? INT_MAX : std::abs(((dx > 0 ? 1 : 0) + x - p0.x)/dx);
+        auto tMaxY = dy == 0 ? INT_MAX : std::abs(((dy > 0 ? 1 : 0) + y - p0.y)/dy);
+
+        const auto tdx = std::abs(xi/dx);
+        const auto tdy = std::abs(yi/dy);
+
+        if (prevX != x || prevY != y) {
+            tiles.emplace_back(x, y);
+            if (ring && y != prevY) {
+                ring->emplace_back(x, y);
+            }
+            prevX = x; prevY = y;
+        }
+
+        while (tMaxX < 1 || tMaxY < 1) {
+            if (tMaxX < tMaxY) {
+                tMaxX += tdx;
+                x += xi;
+            } else {
+                tMaxY += tdy;
+                y += yi;
+            }
+            tiles.emplace_back(x, y);
+            if (ring && y != prevY) {
+                ring->emplace_back(x, y);
+            }
+            prevX = x; prevY = y;
+        }
+    }
+
+    if (ring && y == ring->at(0).y) {
+        ring->pop_back();
+    }
+
+    return tiles;
+}
+
+std::vector<Point<int32_t>> polygonCover(const Polygon<double>& geom, int32_t zoom) {
+    std::vector<Point<int32_t>> tiles, intersections;
+
+    for (uint32_t i = 0; i < geom.size(); i++) {
+        std::vector<Point<int32_t>> ring;
+        auto cover = lineCover(geom[i], zoom, &ring);
+
+        tiles.insert(tiles.end(), cover.begin(), cover.end());
+        uint32_t ringLength = ring.size();
+        uint32_t k = ringLength - 1;
+        for (uint32_t j = 0; j < ringLength; k = j++) {
+            auto m = (j + 1) % ringLength;
+            auto y = ring[j].y;
+
+            // add interesction if it's not local extremum or duplicate
+            if ((y > ring[k].y || y > ring[m].y) && // not local minimum
+                (y < ring[k].y || y < ring[m].y) && // not local maximum
+                (y!= ring[m].y)) {
+                intersections.push_back(ring[j]);
+            }
+        }
+    }
+
+    // Sort by y then by x
+    std::sort(intersections.begin(), intersections.end(), [](const Point<int32_t>& a, const Point<int32_t>& b) {
+        return std::tie(a.y, a.x) < std::tie(b.y, b.x);
+    });
+
+    //Fill tiles inside the ring
+    auto numTiles = intersections.size();
+    for(uint32_t i = 0; i < numTiles; i+=2) {
+        auto t = intersections[i];
+        auto t1 = intersections[i+1];
+        auto y = t.y;
+        for (int32_t x = t.x + 1; x < t1.x; x++) {
+            tiles.emplace_back(x, y);
+        }
+    }
+    return tiles;
+}
+
+struct ToTileCover {
+    int32_t zoom;
+    ToTileCover(int32_t z): zoom(z) {}
+
+    std::vector<Point<int32_t>> operator()(const Point<double>& g) const {
+        auto projectedPt = TileCoordinate::fromLatLng(zoom, { g.y, g.x }).p;
+        return {{ static_cast<int32_t>(floor(projectedPt.x)),
+                  static_cast<int32_t>(floor(projectedPt.y)) }};
+    }
+    std::vector<Point<int32_t>> operator()(const MultiPoint<double>& g) const {
+        std::vector<Point<int32_t>> tiles;
+        for (auto& pt: g) {
+            auto projectedPt = TileCoordinate::fromLatLng(zoom, { pt.y, pt.x }).p;
+            tiles.emplace_back(static_cast<int32_t>(floor(projectedPt.x)),
+                               static_cast<int32_t>(floor(projectedPt.y)));
+        };
+        return tiles;
+    }
+    std::vector<Point<int32_t>> operator()(const LineString<double>& g) const {
+        return lineCover(g, zoom);
+    }
+    std::vector<Point<int32_t>> operator()(const MultiLineString<double>& g) const {
+        std::vector<Point<int32_t>> tiles;
+        for(auto& line: g) {
+            auto t = lineCover(line, zoom);
+            tiles.insert(tiles.end(), t.begin(), t.end());
+        }
+        return tiles;
+    }
+    std::vector<Point<int32_t>> operator()(const Polygon<double>& g) const {
+        return polygonCover(g, zoom);
+    }
+    std::vector<Point<int32_t>> operator()(const MultiPolygon<double>& g) const {
+        std::vector<Point<int32_t>> tiles;
+        for(auto& poly: g) {
+            auto t = polygonCover(poly, zoom);
+            tiles.insert(tiles.end(), t.begin(), t.end());
+        }
+        return tiles;
+    }
+    std::vector<Point<int32_t>> operator()(const mapbox::geometry::geometry_collection<double>& g) const {
+        std::vector<Point<int32_t>> tiles;
+        for(auto& geometry: g) {
+            auto t = apply_visitor(ToTileCover(zoom), geometry);
+            tiles.insert(tiles.end(), t.begin(), t.end());
+        }
+        return tiles;
+    }
+};
+
 } // namespace
 
 int32_t coveringZoomLevel(double zoom, style::SourceType type, uint16_t size) {
@@ -155,6 +308,26 @@ std::vector<UnwrappedTileID> tileCover(const LatLngBounds& bounds_, int32_t z) {
         z);
 }
 
+std::vector<UnwrappedTileID> tileCover(const Geometry<double>& geom, int32_t zoom ) {
+    ToTileCover ttc(zoom);
+    std::vector<Point<int32_t>> tiles = apply_visitor(ttc, geom);
+
+    // Sort by y then by x
+    std::sort(tiles.begin(), tiles.end(), [](const auto& a, const auto& b) {
+        return std::tie(a.y, a.x) < std::tie(b.y, b.x);
+    });
+
+    // Erase duplicate tile IDs
+    tiles.erase(std::unique(tiles.begin(), tiles.end()), tiles.end());
+
+    std::vector<UnwrappedTileID> tileIds;
+    tileIds.reserve(tiles.size());
+    for (const auto& t: tiles) {
+        tileIds.emplace_back(zoom, t.x, t.y);
+    }
+    return tileIds;
+}
+
 std::vector<UnwrappedTileID> tileCover(const TransformState& state, int32_t z) {
     assert(state.valid());
 
@@ -167,6 +340,10 @@ std::vector<UnwrappedTileID> tileCover(const TransformState& state, int32_t z) {
         TileCoordinate::fromScreenCoordinate(state, z, { 0,   h   }).p,
         TileCoordinate::fromScreenCoordinate(state, z, { w/2, h/2 }).p,
         z);
+}
+
+uint64_t tileCount(const Geometry<double>& geom, uint8_t zoom){
+    return tileCover(geom, zoom).size();
 }
 
 // Taken from https://github.com/mapbox/sphericalmercator#xyzbbox-zoom-tms_style-srs
