@@ -104,7 +104,9 @@ void NativeMapView::notifyMapChange(mbgl::MapChange change) {
 
     android::UniqueEnv _env = android::AttachEnv();
     static auto onMapChanged = javaClass.GetMethod<void (int)>(*_env, "onMapChanged");
-    javaPeer->Call(*_env, onMapChanged, (int) change);
+    if (javaPeer != NULL) {
+        javaPeer->Call(*_env, onMapChanged, (int) change);
+    }
 }
 
 void NativeMapView::onCameraWillChange(MapObserver::CameraChangeMode mode) {
@@ -408,7 +410,9 @@ void NativeMapView::scheduleSnapshot(jni::JNIEnv&) {
 
         // invoke Mapview#OnSnapshotReady
         static auto onSnapshotReady = javaClass.GetMethod<void (jni::Object<Bitmap>)>(*_env, "onSnapshotReady");
-        javaPeer->Call(*_env, onSnapshotReady, bitmap);
+        if (javaPeer != NULL) {
+            javaPeer->Call(*_env, onSnapshotReady, bitmap);
+        }
     });
 }
 
