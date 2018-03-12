@@ -1,6 +1,7 @@
 #pragma once
 
 #include <mbgl/util/geo.hpp>
+#include <mbgl/util/geometry.hpp>
 #include <mbgl/util/range.hpp>
 #include <mbgl/util/optional.hpp>
 #include <mbgl/style/types.hpp>
@@ -15,7 +16,7 @@ namespace mbgl {
 class TileID;
 
 /*
- * An offline region defined by a style URL, geographic bounding box, zoom range, and
+ * An offline region defined by a style URL, a geometry, zoom range, and
  * device pixel ratio.
  *
  * Both minZoom and maxZoom must be ≥ 0, and maxZoom must be ≥ minZoom.
@@ -25,27 +26,23 @@ class TileID;
  *
  * pixelRatio must be ≥ 0 and should typically be 1.0 or 2.0.
  */
-class OfflineTilePyramidRegionDefinition {
+class OfflineRegionDefinition {
 public:
-    OfflineTilePyramidRegionDefinition(std::string, LatLngBounds, double, double, float);
+    OfflineRegionDefinition(std::string, LatLngBounds, double, double, float);
+    OfflineRegionDefinition(std::string, Geometry<double>, double, double, float);
 
     /* Private */
     std::vector<CanonicalTileID> tileCover(style::SourceType, uint16_t tileSize, const Range<uint8_t>& zoomRange) const;
     uint64_t tileCount(style::SourceType, uint16_t tileSize, const Range<uint8_t>& zoomRange) const;
     const std::string styleURL;
-    const LatLngBounds bounds;
+    const Geometry<double> geometry;
     const double minZoom;
     const double maxZoom;
     const float pixelRatio;
 private:
     Range<uint8_t> coveringZoomRange(style::SourceType, uint16_t tileSize, const Range<uint8_t>& zoomRange) const;
+    void checkValid() const;
 };
-
-/*
- * For the present, a tile pyramid is the only type of offline region. In the future,
- * other definition types will be available and this will be a variant type.
- */
-using OfflineRegionDefinition = OfflineTilePyramidRegionDefinition;
 
 /*
  * The encoded format is private.

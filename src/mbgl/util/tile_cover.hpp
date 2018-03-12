@@ -20,6 +20,7 @@ std::vector<UnwrappedTileID> tileCover(const LatLngBounds&, int32_t z);
 std::vector<UnwrappedTileID> tileCover(const Geometry<double>&, int32_t z);
 
 // Compute only the count of tiles needed for tileCover
+uint64_t tileCount(const Geometry<double>&, uint8_t zoom);
 uint64_t tileCount(const LatLngBounds&, uint8_t z);
 
 } // namespace util

@@ -70,7 +70,7 @@ int main(int argc, char *argv[]) {
     fileSource.setAccessToken(token);
 
     LatLngBounds boundingBox = LatLngBounds::hull(LatLng(north, west), LatLng(south, east));
-    OfflineTilePyramidRegionDefinition definition(style, boundingBox, minZoom, maxZoom, pixelRatio);
+    OfflineRegionDefinition definition(style, boundingBox, minZoom, maxZoom, pixelRatio);
     OfflineRegionMetadata metadata;
 
     class Observer : public OfflineRegionObserver {

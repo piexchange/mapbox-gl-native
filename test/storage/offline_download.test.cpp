@@ -63,7 +63,7 @@ TEST(OfflineDownload, NoSubresources) {
     OfflineRegion region = test.createRegion();
     OfflineDownload download(
         region.getID(),
-        OfflineTilePyramidRegionDefinition("http://127.0.0.1:3000/style.json", LatLngBounds::world(), 0.0, 0.0, 1.0),
+        OfflineRegionDefinition("http://127.0.0.1:3000/style.json", LatLngBounds::world(), 0.0, 0.0, 1.0),
         test.db, test.fileSource);
 
     test.fileSource.styleResponse = [&] (const Resource& resource) {
@@ -103,7 +103,7 @@ TEST(OfflineDownload, InlineSource) {
     OfflineRegion region = test.createRegion();
     OfflineDownload download(
         region.getID(),
-        OfflineTilePyramidRegionDefinition("http://127.0.0.1:3000/style.json", LatLngBounds::world(), 0.0, 0.0, 1.0),
+        OfflineRegionDefinition("http://127.0.0.1:3000/style.json", LatLngBounds::world(), 0.0, 0.0, 1.0),
         test.db, test.fileSource);
 
     test.fileSource.styleResponse = [&] (const Resource& resource) {
@@ -143,7 +143,7 @@ TEST(OfflineDownload, GeoJSONSource) {
     OfflineRegion region = test.createRegion();
     OfflineDownload download(
         region.getID(),
-        OfflineTilePyramidRegionDefinition("http://127.0.0.1:3000/style.json", LatLngBounds::world(), 0.0, 0.0, 1.0),
+        OfflineRegionDefinition("http://127.0.0.1:3000/style.json", LatLngBounds::world(), 0.0, 0.0, 1.0),
         test.db, test.fileSource);
 
     test.fileSource.styleResponse = [&] (const Resource& resource) {
@@ -178,7 +178,7 @@ TEST(OfflineDownload, Activate) {
     OfflineRegion region = test.createRegion();
     OfflineDownload download(
         region.getID(),
-        OfflineTilePyramidRegionDefinition("http://127.0.0.1:3000/style.json", LatLngBounds::world(), 0.0, 0.0, 1.0),
+        OfflineRegionDefinition("http://127.0.0.1:3000/style.json", LatLngBounds::world(), 0.0, 0.0, 1.0),
         test.db, test.fileSource);
 
     test.fileSource.styleResponse = [&] (const Resource& resource) {
@@ -253,7 +253,7 @@ TEST(OfflineDownload, DoesNotFloodTheFileSourceWithRequests) {
     OfflineRegion region = test.createRegion();
     OfflineDownload download(
         region.getID(),
-        OfflineTilePyramidRegionDefinition("http://127.0.0.1:3000/style.json", LatLngBounds::world(), 0.0, 0.0, 1.0),
+        OfflineRegionDefinition("http://127.0.0.1:3000/style.json", LatLngBounds::world(), 0.0, 0.0, 1.0),
         test.db, fileSource);
 
     auto observer = std::make_unique<MockObserver>();
@@ -275,7 +275,7 @@ TEST(OfflineDownload, GetStatusNoResources) {
     OfflineRegion region = test.createRegion();
     OfflineDownload download(
         region.getID(),
-        OfflineTilePyramidRegionDefinition("http://127.0.0.1:3000/style.json", LatLngBounds::world(), 0.0, 0.0, 1.0),
+        OfflineRegionDefinition("http://127.0.0.1:3000/style.json", LatLngBounds::world(), 0.0, 0.0, 1.0),
         test.db, test.fileSource);
     OfflineRegionStatus status = download.getStatus();
 
@@ -292,7 +292,7 @@ TEST(OfflineDownload, GetStatusStyleComplete) {
     OfflineRegion region = test.createRegion();
     OfflineDownload download(
         region.getID(),
-        OfflineTilePyramidRegionDefinition("http://127.0.0.1:3000/style.json", LatLngBounds::world(), 0.0, 0.0, 1.0),
+        OfflineRegionDefinition("http://127.0.0.1:3000/style.json", LatLngBounds::world(), 0.0, 0.0, 1.0),
         test.db, test.fileSource);
 
     test.db.putRegionResource(1,
@@ -314,7 +314,7 @@ TEST(OfflineDownload, GetStatusStyleAndSourceComplete) {
     OfflineRegion region = test.createRegion();
     OfflineDownload download(
         region.getID(),
-        OfflineTilePyramidRegionDefinition("http://127.0.0.1:3000/style.json", LatLngBounds::world(), 0.0, 0.0, 1.0),
+        OfflineRegionDefinition("http://127.0.0.1:3000/style.json", LatLngBounds::world(), 0.0, 0.0, 1.0),
         test.db, test.fileSource);
 
     test.db.putRegionResource(1,
@@ -340,7 +340,7 @@ TEST(OfflineDownload, RequestError) {
     OfflineRegion region = test.createRegion();
     OfflineDownload download(
         region.getID(),
-        OfflineTilePyramidRegionDefinition("http://127.0.0.1:3000/style.json", LatLngBounds::world(), 0.0, 0.0, 1.0),
+        OfflineRegionDefinition("http://127.0.0.1:3000/style.json", LatLngBounds::world(), 0.0, 0.0, 1.0),
         test.db, test.fileSource);
 
     test.fileSource.styleResponse = [&] (const Resource&) {
@@ -368,7 +368,7 @@ TEST(OfflineDownload, RequestErrorsAreRetried) {
     OfflineRegion region = test.createRegion();
     OfflineDownload download(
         region.getID(),
-        OfflineTilePyramidRegionDefinition("http://127.0.0.1:3000/style.json", LatLngBounds::world(), 0.0, 0.0, 1.0),
+        OfflineRegionDefinition("http://127.0.0.1:3000/style.json", LatLngBounds::world(), 0.0, 0.0, 1.0),
         test.db, test.fileSource);
 
     test.fileSource.styleResponse = [&] (const Resource&) {
@@ -401,7 +401,7 @@ TEST(OfflineDownload, TileCountLimitExceededNoTileResponse) {
     OfflineRegion region = test.createRegion();
     OfflineDownload download(
         region.getID(),
-        OfflineTilePyramidRegionDefinition("http://127.0.0.1:3000/style.json", LatLngBounds::world(), 0.0, 0.0, 1.0),
+        OfflineRegionDefinition("http://127.0.0.1:3000/style.json", LatLngBounds::world(), 0.0, 0.0, 1.0),
         test.db, test.fileSource);
 
     uint64_t tileLimit = 0;
@@ -443,7 +443,7 @@ TEST(OfflineDownload, TileCountLimitExceededWithTileResponse) {
     OfflineRegion region = test.createRegion();
     OfflineDownload download(
         region.getID(),
-        OfflineTilePyramidRegionDefinition("http://127.0.0.1:3000/style.json", LatLngBounds::world(), 0.0, 0.0, 1.0),
+        OfflineRegionDefinition("http://127.0.0.1:3000/style.json", LatLngBounds::world(), 0.0, 0.0, 1.0),
         test.db, test.fileSource);
 
     uint64_t tileLimit = 1;
@@ -497,7 +497,7 @@ TEST(OfflineDownload, WithPreviouslyExistingTile) {
     OfflineRegion region = test.createRegion();
     OfflineDownload download(
         region.getID(),
-        OfflineTilePyramidRegionDefinition("http://127.0.0.1:3000/style.json", LatLngBounds::world(), 0.0, 0.0, 1.0),
+        OfflineRegionDefinition("http://127.0.0.1:3000/style.json", LatLngBounds::world(), 0.0, 0.0, 1.0),
         test.db, test.fileSource);
 
     test.fileSource.styleResponse = [&] (const Resource& resource) {
@@ -531,7 +531,7 @@ TEST(OfflineDownload, ReactivatePreviouslyCompletedDownload) {
     OfflineRegion region = test.createRegion();
     OfflineDownload download(
         region.getID(),
-        OfflineTilePyramidRegionDefinition("http://127.0.0.1:3000/style.json", LatLngBounds::world(), 0.0, 0.0, 1.0),
+        OfflineRegionDefinition("http://127.0.0.1:3000/style.json", LatLngBounds::world(), 0.0, 0.0, 1.0),
         test.db, test.fileSource);
 
     test.fileSource.styleResponse = [&] (const Resource& resource) {
@@ -557,7 +557,7 @@ TEST(OfflineDownload, ReactivatePreviouslyCompletedDownload) {
 
     OfflineDownload redownload(
         region.getID(),
-        OfflineTilePyramidRegionDefinition("http://127.0.0.1:3000/style.json", LatLngBounds::world(), 0.0, 0.0, 1.0),
+        OfflineRegionDefinition("http://127.0.0.1:3000/style.json", LatLngBounds::world(), 0.0, 0.0, 1.0),
         test.db, test.fileSource);
 
     std::vector<OfflineRegionStatus> statusesAfterReactivate;
@@ -598,7 +598,7 @@ TEST(OfflineDownload, Deactivate) {
     OfflineRegion region = test.createRegion();
     OfflineDownload download(
         region.getID(),
-        OfflineTilePyramidRegionDefinition("http://127.0.0.1:3000/style.json", LatLngBounds::world(), 0.0, 0.0, 1.0),
+        OfflineRegionDefinition("http://127.0.0.1:3000/style.json", LatLngBounds::world(), 0.0, 0.0, 1.0),
         test.db, test.fileSource);
 
     test.fileSource.styleResponse = [&] (const Resource& resource) {

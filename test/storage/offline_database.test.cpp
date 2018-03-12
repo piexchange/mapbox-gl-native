@@ -225,7 +225,7 @@ TEST(OfflineDatabase, CreateRegion) {
     OfflineRegion region = db.createRegion(definition, metadata);
 
     EXPECT_EQ(definition.styleURL, region.getDefinition().styleURL);
-    EXPECT_EQ(definition.bounds, region.getDefinition().bounds);
+    EXPECT_EQ(definition.geometry, region.getDefinition().geometry);
     EXPECT_EQ(definition.minZoom, region.getDefinition().minZoom);
     EXPECT_EQ(definition.maxZoom, region.getDefinition().maxZoom);
     EXPECT_EQ(definition.pixelRatio, region.getDefinition().pixelRatio);
@@ -258,7 +258,7 @@ TEST(OfflineDatabase, ListRegions) {
     ASSERT_EQ(1u, regions.size());
     EXPECT_EQ(region.getID(), regions.at(0).getID());
     EXPECT_EQ(definition.styleURL, regions.at(0).getDefinition().styleURL);
-    EXPECT_EQ(definition.bounds, regions.at(0).getDefinition().bounds);
+    EXPECT_EQ(definition.geometry, regions.at(0).getDefinition().geometry);
     EXPECT_EQ(definition.minZoom, regions.at(0).getDefinition().minZoom);
     EXPECT_EQ(definition.maxZoom, regions.at(0).getDefinition().maxZoom);
     EXPECT_EQ(definition.pixelRatio, regions.at(0).getDefinition().pixelRatio);
@@ -276,7 +276,7 @@ TEST(OfflineDatabase, GetRegionDefinition) {
     OfflineRegionDefinition result = db.getRegionDefinition(region.getID());
 
     EXPECT_EQ(definition.styleURL, result.styleURL);
-    EXPECT_EQ(definition.bounds, result.bounds);
+    EXPECT_EQ(definition.geometry, result.geometry);
     EXPECT_EQ(definition.minZoom, result.minZoom);
     EXPECT_EQ(definition.maxZoom, result.maxZoom);
     EXPECT_EQ(definition.pixelRatio, result.pixelRatio);
