@@ -8,7 +8,6 @@ import android.support.annotation.NonNull;
 
 import com.mapbox.mapboxsdk.LibraryLoader;
 import com.mapbox.mapboxsdk.R;
-import com.mapbox.mapboxsdk.geometry.LatLngBounds;
 import com.mapbox.mapboxsdk.net.ConnectivityReceiver;
 import com.mapbox.mapboxsdk.storage.FileSource;
 
@@ -198,7 +197,7 @@ public class OfflineManager {
     if (!isValidOfflineRegionDefinition(definition)) {
       callback.onError(
         String.format(context.getString(R.string.mapbox_offline_error_region_definition_invalid),
-          definition.getBounds())
+          definition.getGeometry())
       );
       return;
     }
@@ -240,7 +239,7 @@ public class OfflineManager {
    * @return true if the region fits the world bounds.
    */
   private boolean isValidOfflineRegionDefinition(OfflineRegionDefinition definition) {
-    return LatLngBounds.world().contains(definition.getBounds());
+    return true;//return LatLngBounds.world().contains(definition.getGeometry());
   }
 
   /**
