@@ -194,8 +194,8 @@ std::vector<Point<int32_t>> polygonCover(const Polygon<double>& geom, int32_t zo
         auto cover = lineCover(geom[i], zoom, &ring);
 
         tiles.insert(tiles.end(), cover.begin(), cover.end());
-        uint32_t ringLength = ring.size();
-        uint32_t k = ringLength - 1;
+        auto ringLength = ring.size();
+        auto k = ringLength - 1;
         for (uint32_t j = 0; j < ringLength; k = j++) {
             auto m = (j + 1) % ringLength;
             auto y = ring[j].y;
