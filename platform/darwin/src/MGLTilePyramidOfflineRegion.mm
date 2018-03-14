@@ -6,6 +6,9 @@
 
 #import "MGLOfflineRegion_Private.h"
 #import "MGLGeometry_Private.h"
+#import "MGLFeature_Private.h"
+#import "MGLShape_Private.h"
+#import "MGLPolygon.h"
 #import "MGLStyle.h"
 
 @interface MGLTilePyramidOfflineRegion () <MGLOfflineRegion_Private>
@@ -46,7 +49,36 @@
         }
 
         _styleURL = styleURL;
-        _bounds = bounds;
+        CLLocationCoordinate2D boundsCoordinates[4] = {
+            CLLocationCoordinate2DMake(bounds.ne.latitude, bounds.ne.longitude),
+            CLLocationCoordinate2DMake(bounds.ne.latitude, bounds.sw.longitude),
+            CLLocationCoordinate2DMake(bounds.sw.latitude, bounds.sw.longitude),
+            CLLocationCoordinate2DMake(bounds.sw.latitude, bounds.ne.longitude)
+        };
+        _shape = [MGLPolygon polygonWithCoordinates:boundsCoordinates count:4];
+        _minimumZoomLevel = minimumZoomLevel;
+        _maximumZoomLevel = maximumZoomLevel;
+    }
+    return self;
+}
+
+- (instancetype)initWithStyleURL:(NSURL *)styleURL shape:(MGLShape *)shape fromZoomLevel:(double)minimumZoomLevel toZoomLevel:(double)maximumZoomLevel {
+    if (self = [super init]) {
+        if (!styleURL) {
+            styleURL = [MGLStyle streetsStyleURLWithVersion:MGLStyleDefaultVersion];
+        }
+        
+        if (!styleURL.scheme) {
+            [NSException raise:@"Invalid style URL" format:
+             @"%@ does not support setting a relative file URL as the style URL. "
+             @"To download the online resources required by this style, "
+             @"specify a URL to an online copy of this style. "
+             @"For Mapbox-hosted styles, use the mapbox: scheme.",
+             NSStringFromClass([self class])];
+        }
+        
+        _styleURL = styleURL;
+        _shape = shape;
         _minimumZoomLevel = minimumZoomLevel;
         _maximumZoomLevel = maximumZoomLevel;
     }
@@ -55,8 +87,8 @@
 
 - (instancetype)initWithOfflineRegionDefinition:(const mbgl::OfflineRegionDefinition &)definition {
     NSURL *styleURL = [NSURL URLWithString:@(definition.styleURL.c_str())];
-    MGLCoordinateBounds bounds = MGLCoordinateBoundsFromLatLngBounds(definition.bounds);
-    return [self initWithStyleURL:styleURL bounds:bounds fromZoomLevel:definition.minZoom toZoomLevel:definition.maxZoom];
+    MGLShape *shape = MGLShapeFromGeometry(definition.geometry); // TODO
+    return [self initWithStyleURL:styleURL shape:shape fromZoomLevel:definition.minZoom toZoomLevel:definition.maxZoom];
 }
 
 - (const mbgl::OfflineRegionDefinition)offlineRegionDefinition {
@@ -65,10 +97,10 @@
 #elif TARGET_OS_MAC
     const float scaleFactor = [NSScreen mainScreen].backingScaleFactor;
 #endif
-    return mbgl::OfflineTilePyramidRegionDefinition(_styleURL.absoluteString.UTF8String,
-                                                    MGLLatLngBoundsFromCoordinateBounds(_bounds),
-                                                    _minimumZoomLevel, _maximumZoomLevel,
-                                                    scaleFactor);
+    return mbgl::OfflineRegionDefinition(_styleURL.absoluteString.UTF8String,
+                                         _shape.geometryObject,
+                                         _minimumZoomLevel, _maximumZoomLevel,
+                                         scaleFactor);
 }
 
 - (nullable instancetype)initWithCoder:(NSCoder *)coder {
@@ -87,16 +119,13 @@
 - (void)encodeWithCoder:(NSCoder *)coder
 {
     [coder encodeObject:_styleURL forKey:@"styleURL"];
-    [coder encodeDouble:_bounds.sw.latitude forKey:@"southWestLatitude"];
-    [coder encodeDouble:_bounds.sw.longitude forKey:@"southWestLongitude"];
-    [coder encodeDouble:_bounds.ne.latitude forKey:@"northEastLatitude"];
-    [coder encodeDouble:_bounds.ne.longitude forKey:@"northEastLongitude"];
+    [coder encodeObject:_shape forKey:@"shape"];
     [coder encodeDouble:_maximumZoomLevel forKey:@"maximumZoomLevel"];
     [coder encodeDouble:_minimumZoomLevel forKey:@"minimumZoomLevel"];
 }
 
 - (id)copyWithZone:(nullable NSZone *)zone {
-    return [[[self class] allocWithZone:zone] initWithStyleURL:_styleURL bounds:_bounds fromZoomLevel:_minimumZoomLevel toZoomLevel:_maximumZoomLevel];
+    return [[[self class] allocWithZone:zone] initWithStyleURL:_styleURL shape:_shape fromZoomLevel:_minimumZoomLevel toZoomLevel:_maximumZoomLevel];
 }
 
 - (BOOL)isEqual:(id)other {
@@ -110,14 +139,13 @@
     MGLTilePyramidOfflineRegion *otherRegion = other;
     return (_minimumZoomLevel == otherRegion->_minimumZoomLevel
             && _maximumZoomLevel == otherRegion->_maximumZoomLevel
-            && MGLCoordinateBoundsEqualToCoordinateBounds(_bounds, otherRegion->_bounds)
+//            && MGLCoordinateBoundsEqualToCoordinateBounds(_bounds, otherRegion->_bounds)
             && [_styleURL isEqual:otherRegion->_styleURL]);
 }
 
 - (NSUInteger)hash {
     return (_styleURL.hash
-            + @(_bounds.sw.latitude).hash + @(_bounds.sw.longitude).hash
-            + @(_bounds.ne.latitude).hash + @(_bounds.ne.longitude).hash
+            + _shape.hash
             + @(_minimumZoomLevel).hash + @(_maximumZoomLevel).hash);
 }
 

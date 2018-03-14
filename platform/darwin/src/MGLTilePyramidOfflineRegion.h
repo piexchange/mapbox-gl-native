@@ -3,6 +3,7 @@
 #import "MGLFoundation.h"
 #import "MGLOfflineRegion.h"
 #import "MGLGeometry.h"
+#import "MGLShape.h"
 
 NS_ASSUME_NONNULL_BEGIN
 
@@ -25,10 +26,10 @@ MGL_EXPORT
 @property (nonatomic, readonly) NSURL *styleURL;
 
 /**
- The coordinate bounds for the geographic region covered by the downloaded
+ The shape of the geographic region covered by the downloaded
  tiles.
  */
-@property (nonatomic, readonly) MGLCoordinateBounds bounds;
+@property (nonatomic, readonly) MGLShape *shape;
 
 /**
  The minimum zoom level for which to download tiles and other resources.
@@ -74,6 +75,35 @@ MGL_EXPORT
     level.
  */
 - (instancetype)initWithStyleURL:(nullable NSURL *)styleURL bounds:(MGLCoordinateBounds)bounds fromZoomLevel:(double)minimumZoomLevel toZoomLevel:(double)maximumZoomLevel NS_DESIGNATED_INITIALIZER;
+
+/**
+ Initializes a newly created offline region with the given style URL, geographic
+ shape, and range of zoom levels.
+
+ This is the designated initializer for `MGLTilePyramidOfflineRegion`.
+
+ @param styleURL URL of the map style for which to download resources. The URL
+    may be a full HTTP or HTTPS URL or a Mapbox URL indicating the style’s map
+    ID (`mapbox://styles/{user}/{style}`). Specify `nil` for the default style.
+    Relative file URLs cannot be used as offline style URLs. To download the
+    online resources required by a local style, specify a URL to an online copy
+    of the style.
+ @param shape The shape of the geographic region to be covered by
+    the downloaded tiles.
+ @param minimumZoomLevel The minimum zoom level to be covered by the downloaded
+    tiles. This parameter should be set to at least 0 but no greater than the
+    value of the `maximumZoomLevel` parameter. For each required tile source, if
+    this parameter is set to a value less than the tile source’s minimum zoom
+    level, the download covers zoom levels down to the tile source’s minimum
+    zoom level.
+ @param maximumZoomLevel The maximum zoom level to be covered by the downloaded
+    tiles. This parameter should be set to at least the value of the
+    `minimumZoomLevel` parameter. For each required tile source, if this
+    parameter is set to a value greater than the tile source’s minimum zoom
+    level, the download covers zoom levels up to the tile source’s maximum zoom
+    level.
+ */
+- (instancetype)initWithStyleURL:(nullable NSURL *)styleURL shape:(MGLShape *)shape fromZoomLevel:(double)minimumZoomLevel toZoomLevel:(double)maximumZoomLevel NS_DESIGNATED_INITIALIZER;
 
 @end
 

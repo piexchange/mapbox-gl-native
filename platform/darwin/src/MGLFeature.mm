@@ -404,6 +404,12 @@ MGLShape* MGLShapeFromGeoJSON(const mapbox::geojson::geojson &geojson) {
     return shape;
 }
 
+MGLShape* MGLShapeFromGeometry(const mapbox::geojson::geometry &geometry) {
+    GeoJSONEvaluator<double> evaluator;
+    MGLShape *shape = mapbox::geojson::geometry::visit(geometry, evaluator);
+    return shape;
+}
+
 mbgl::Feature mbglFeature(mbgl::Feature feature, id identifier, NSDictionary *attributes)
 {
     if (identifier) {

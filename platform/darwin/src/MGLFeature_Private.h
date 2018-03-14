@@ -27,6 +27,12 @@ id <MGLFeature> MGLFeatureFromMBGLFeature(const mbgl::Feature &feature);
 MGLShape* MGLShapeFromGeoJSON(const mapbox::geojson::geojson &geojson);
 
 /**
+ Returns an `MGLShape` representing the given geojson. The shape can any
+ geometry (including geometry_collection).
+ */
+MGLShape* MGLShapeFromGeometry(const mapbox::geojson::geometry &geometry);
+
+/**
  Takes an `mbgl::Feature` object, an identifer, and attributes dictionary and
  returns the feature object with converted `mbgl::FeatureIdentifier` and
  `mbgl::PropertyMap` properties.
