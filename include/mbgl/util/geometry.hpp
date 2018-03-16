@@ -3,6 +3,8 @@
 #include <mapbox/geometry/geometry.hpp>
 #include <mapbox/geometry/point_arithmetic.hpp>
 #include <mapbox/geometry/for_each_point.hpp>
+#include <mbgl/util/feature.hpp>
+#include <mbgl/util/optional.hpp>
 
 namespace mbgl {
 
@@ -36,6 +38,41 @@ using LinearRing = mapbox::geometry::linear_ring<T>;
 
 template <class T>
 using Geometry = mapbox::geometry::geometry<T>;
+
+
+// Normalized vector tile coordinates.
+// Each geometry coordinate represents a point in a bidimensional space,
+// varying from -V...0...+V, where V is the maximum extent applicable.
+using GeometryCoordinate = Point<int16_t>;
+
+class GeometryCoordinates : public std::vector<GeometryCoordinate> {
+public:
+    using coordinate_type = int16_t;
+
+    GeometryCoordinates() = default;
+    GeometryCoordinates(const std::vector<GeometryCoordinate>& v)
+        : std::vector<GeometryCoordinate>(v) {}
+    GeometryCoordinates(std::vector<GeometryCoordinate>&& v)
+        : std::vector<GeometryCoordinate>(std::move(v)) {}
+
+    using std::vector<GeometryCoordinate>::vector;
+};
+
+class GeometryCollection : public std::vector<GeometryCoordinates> {
+public:
+    using coordinate_type = int16_t;
+    using std::vector<GeometryCoordinates>::vector;
+};
+
+class GeometryTileFeature {
+public:
+    virtual ~GeometryTileFeature() = default;
+    virtual FeatureType getType() const = 0;
+    virtual optional<Value> getValue(const std::string& key) const = 0;
+    virtual PropertyMap getProperties() const { return PropertyMap(); }
+    virtual optional<FeatureIdentifier> getID() const { return {}; }
+    virtual GeometryCollection getGeometries() const = 0;
+};
 
 template <class S, class T>
 Point<S> convertPoint(const Point<T>& p) {
