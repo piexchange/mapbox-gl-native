@@ -4,6 +4,18 @@ namespace mbgl {
 namespace android {
 namespace gson {
 
+jni::Object<JsonPrimitive> JsonPrimitive::New(jni::JNIEnv &env, std::string value) {
+    static auto constructor = JsonPrimitive::javaClass.GetConstructor<jni::String>(env);
+    return JsonPrimitive::javaClass.New(env, constructor, jni::Make<jni::String>(env, value));
+}
+
+
+jni::Object<JsonPrimitive> JsonPrimitive::New(jni::JNIEnv &env, bool value) {
+    static auto constructor = JsonPrimitive::javaClass.GetConstructor<jboolean>(env);
+    jboolean jbool = (jboolean) value;
+    return JsonPrimitive::javaClass.New(env, constructor, jbool);
+}
+
 JsonPrimitive::value JsonPrimitive::convert(jni::JNIEnv &env, jni::Object<JsonPrimitive> jsonPrimitive) {
     value value;
     if (jsonPrimitive) {

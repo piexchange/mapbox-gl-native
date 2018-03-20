@@ -11,6 +11,48 @@ namespace mbgl {
 namespace android {
 namespace gson {
 
+/**
+ * Turn mapbox::geometry::value into Java Gson JsonElement
+ */
+class GsonEvaluator {
+public:
+
+    jni::JNIEnv& env;
+
+    jni::Object<JsonElement> operator()(const mapbox::geometry::null_value_t) const {
+        // todo how to return java null?
+        return jni::Cast(env, JsonPrimitive::New(env, ""), JsonElement::javaClass);
+    }
+
+//    template <class Number>
+//    jni::Object<gson::JsonElement> operator()(const Number& value) const {
+//
+//    }
+
+    jni::Object<JsonElement> operator()(const std::string &value) const {
+        return jni::Cast(env, JsonPrimitive::New(env, value), JsonElement::javaClass);
+    }
+
+    jni::Object<JsonElement> operator()(const bool &value) const {
+        return jni::Cast(env, JsonPrimitive::New(env, value), JsonElement::javaClass);
+    }
+
+    jni::Object<JsonElement> operator()(const std::vector<mapbox::geometry::value> &values) const {
+        return jni::Cast(env, JsonArray::New(env, values), JsonElement::javaClass);
+    }
+
+    jni::Object<JsonElement> operator()(const std::unordered_map<std::string, mapbox::geometry::value> &values) const {
+        return jni::Cast(env, JsonObject::New(env, values), JsonElement::javaClass);
+    }
+
+};
+
+
+jni::Object<JsonElement> JsonElement::New(jni::JNIEnv& env, mapbox::geometry::value value) {
+  GsonEvaluator evaluator { env } ;
+  return mapbox::geometry::value::visit(value, evaluator);
+}
+
 mapbox::geometry::value JsonElement::convert(jni::JNIEnv &env, jni::Object<JsonElement> jsonElement) {
     mapbox::geometry::value value;
 

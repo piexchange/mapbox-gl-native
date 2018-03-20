@@ -15,6 +15,10 @@ public:
 
     static constexpr auto Name() { return "com/google/gson/JsonPrimitive"; };
 
+    static jni::Object<JsonPrimitive> New(jni::JNIEnv&, std::string);
+
+    static jni::Object<JsonPrimitive> New(jni::JNIEnv&, bool);
+
     static value convert(JNIEnv&, jni::Object<JsonPrimitive>);
 
     static bool isBoolean(JNIEnv&, jni::Object<JsonPrimitive>);
