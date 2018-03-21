@@ -258,6 +258,25 @@
     return [self valueForKeyPath:@"mgl_jsonExpressionObject"];
 }
 
+- (id)mgl_case {
+    NSArray *caseArray = self;
+    NSExpression *falseExpression;
+    
+    if (caseArray.count % 2) {
+        falseExpression = caseArray.lastObject;
+        caseArray = [caseArray subarrayWithRange:NSMakeRange(0, caseArray.count - 1)];
+    }
+    
+    for (int index = 0; index < caseArray.count; index++) {
+        NSPredicate *predicate = [caseArray[index] expressionValueWithObject:nil context:nil];
+        if ([predicate evaluateWithObject:nil]) {
+            return [caseArray[++index] expressionValueWithObject:nil context:nil];
+        }
+        index++;
+    }
+    
+    return [falseExpression expressionValueWithObject:nil context:nil];
+}
 @end
 
 @implementation NSDictionary (MGLExpressionAdditions)
@@ -464,36 +483,21 @@ NSArray *MGLSubexpressionsWithJSONObjects(NSArray *objects) {
         } else if ([op isEqualToString:@"var"]) {
             return [NSExpression expressionForVariable:argumentObjects.firstObject];
         } else if ([op isEqualToString:@"case"]) {
-            NSPredicate *conditional = [NSPredicate mgl_predicateWithJSONObject:argumentObjects.firstObject];
-            NSExpression *trueExpression;
-            NSInteger rightBranchIndex = 2;
-
-            if ([argumentObjects[1] isKindOfClass:[NSArray class]] ) {
-                NSInteger length = 1;
-                for (NSInteger index = 1; index < argumentObjects.count - 2; index++) {
-                    length++;
-                    if (![argumentObjects[index] isKindOfClass:[NSArray class]] && ![argumentObjects[index + 1] isKindOfClass:[NSArray class]]) {
-                        break;
-                    }
+            NSArray *caseExpressions = argumentObjects;
+            NSMutableArray *arguments = [NSMutableArray array];
+            
+            for (int index = 0; index < caseExpressions.count; index++) {
+                if ([caseExpressions[index] isKindOfClass:[NSArray class]]) {
+                    NSPredicate *conditional = [NSPredicate mgl_predicateWithJSONObject:caseExpressions[index]];
+                    NSExpression *argument = [NSExpression expressionWithFormat:@"%@", conditional];
+                    [arguments addObject:argument];
+                } else {
+                    [arguments addObject:[NSExpression mgl_expressionWithJSONObject:caseExpressions[index]]];
                 }
-                NSArray *trueObjects = [@[@"case"] arrayByAddingObjectsFromArray:
-                                         [argumentObjects subarrayWithRange:NSMakeRange(1, length)]];
-                trueExpression = [NSExpression mgl_expressionWithJSONObject:trueObjects];
-                rightBranchIndex = length + 1;
-            } else {
-                trueExpression = [NSExpression mgl_expressionWithJSONObject:argumentObjects[1]];
+                
             }
             
-            NSExpression *falseExpression;
-            if ([argumentObjects[rightBranchIndex] isKindOfClass:[NSArray class]] ) {
-                NSArray *falseObjects = [@[@"case"] arrayByAddingObjectsFromArray:
-                                         [argumentObjects subarrayWithRange:NSMakeRange(rightBranchIndex, argumentObjects.count - rightBranchIndex)]];
-                falseExpression = [NSExpression mgl_expressionWithJSONObject:falseObjects];
-            } else {
-                falseExpression = [NSExpression mgl_expressionWithJSONObject:argumentObjects[rightBranchIndex]];
-            }
-            
-            return [NSExpression expressionForConditional:conditional trueExpression:trueExpression falseExpression:falseExpression];
+            return [NSExpression expressionWithFormat:@"FUNCTION(%@, 'mgl_case')", arguments];
         } else {
             [NSException raise:NSInvalidArgumentException
                         format:@"Expression operator %@ not yet implemented.", op];
@@ -684,6 +688,20 @@ NSArray *MGLSubexpressionsWithJSONObjects(NSArray *objects) {
                     [expressionObject addObject:obj.mgl_jsonExpressionObject];
                 }];
                 [expressionObject addObject:self.operand.mgl_jsonExpressionObject];
+                return expressionObject;
+            } else if ([function isEqualToString:@"mgl_case"]) {
+                NSArray *caseOptions = self.operand.constantValue;
+                NSMutableArray *expressionObject = [NSMutableArray arrayWithObjects:@"case", nil];
+                
+                for (NSExpression *option in caseOptions) {
+                    if ([option respondsToSelector:@selector(constantValue)] && [option.constantValue isKindOfClass:[NSComparisonPredicate class]]) {
+                        NSPredicate *predicate = (NSPredicate *)option.constantValue;
+                        [expressionObject addObject:predicate.mgl_jsonExpressionObject];
+                    } else {
+                        [expressionObject addObject:option.mgl_jsonExpressionObject];
+                    }
+                }
+                
                 return expressionObject;
             } else if ([function isEqualToString:@"median:"] ||
                        [function isEqualToString:@"mode:"] ||
